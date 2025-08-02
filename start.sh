@@ -1,33 +1,95 @@
 #!/bin/bash
 
-echo "🚗 Starting ParkSF - Fair Parking in San Francisco"
-echo "=================================================="
+echo "🚀 Starting ParkSF Application..."
 
-# Check if we're in the right directory
-if [ ! -d "frontend" ]; then
-    echo "❌ Error: frontend directory not found. Please run this from the ParkSF root directory."
+# Check if Node.js is installed
+if ! command -v node &> /dev/null; then
+    echo "❌ Node.js is not installed. Please install Node.js 18+ first."
     exit 1
 fi
 
-# Kill any existing Next.js processes
-echo "🔄 Cleaning up any existing processes..."
-pkill -f "next dev" 2>/dev/null || true
+# Function to check if a port is in use
+check_port() {
+    if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null ; then
+        echo "⚠️  Port $1 is already in use"
+        return 1
+    else
+        return 0
+    fi
+}
 
-# Clean build cache
-echo "🧹 Cleaning build cache..."
-cd frontend
-rm -rf .next 2>/dev/null || true
-
-# Install dependencies if needed
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing dependencies..."
-    npm install
+# Check if ports are available
+echo "🔍 Checking port availability..."
+if ! check_port 3000; then
+    echo "❌ Port 3000 (frontend) is already in use"
+    exit 1
 fi
 
-# Start the development server
-echo "🚀 Starting development server..."
-echo "📍 ParkSF will be available at: http://localhost:3000"
-echo "🔄 Press Ctrl+C to stop the server"
-echo ""
+if ! check_port 3001; then
+    echo "❌ Port 3001 (backend) is already in use"
+    exit 1
+fi
 
-npm run dev 
+# Check if MongoDB is running (optional)
+if ! pgrep -x "mongod" > /dev/null; then
+    echo "⚠️  MongoDB is not running. Please start MongoDB if you want to use the database."
+    echo "   You can start it with: mongod"
+fi
+
+# Function to start backend
+start_backend() {
+    echo "🔧 Starting backend server..."
+    cd backend
+    if [ ! -f .env ]; then
+        echo "📝 Creating .env file from template..."
+        cp env.example .env
+        echo "⚠️  Please edit backend/.env with your configuration"
+    fi
+    npm run dev &
+    BACKEND_PID=$!
+    echo "✅ Backend started (PID: $BACKEND_PID)"
+}
+
+# Function to start frontend
+start_frontend() {
+    echo "🎨 Starting frontend server..."
+    cd frontend
+    npm run dev &
+    FRONTEND_PID=$!
+    echo "✅ Frontend started (PID: $FRONTEND_PID)"
+}
+
+# Function to cleanup on exit
+cleanup() {
+    echo ""
+    echo "🛑 Shutting down servers..."
+    if [ ! -z "$BACKEND_PID" ]; then
+        kill $BACKEND_PID 2>/dev/null
+        echo "✅ Backend stopped"
+    fi
+    if [ ! -z "$FRONTEND_PID" ]; then
+        kill $FRONTEND_PID 2>/dev/null
+        echo "✅ Frontend stopped"
+    fi
+    exit 0
+}
+
+# Set up signal handlers
+trap cleanup SIGINT SIGTERM
+
+# Start servers
+start_backend
+sleep 3  # Give backend time to start
+start_frontend
+
+echo ""
+echo "🎉 ParkSF is starting up!"
+echo ""
+echo "📱 Frontend: http://localhost:3000"
+echo "🔧 Backend API: http://localhost:3001"
+echo "📊 Health Check: http://localhost:3001/api/health"
+echo ""
+echo "Press Ctrl+C to stop all servers"
+
+# Wait for user to stop
+wait 

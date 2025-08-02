@@ -29,6 +29,7 @@ Our project aims to fix that.
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
+- MongoDB (local or cloud)
 
 ### Installation
 
@@ -38,18 +39,45 @@ Our project aims to fix that.
    cd ParkSF
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    cd frontend
    npm install
    ```
 
-3. **Start development server**
+3. **Install backend dependencies**
    ```bash
+   cd ../backend
+   npm install
+   # Or use the installation script:
+   ./install.sh
+   ```
+
+4. **Set up environment variables**
+   ```bash
+   # In the backend directory
+   cp env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. **Start MongoDB** (if running locally)
+   ```bash
+   mongod
+   ```
+
+6. **Start the backend server**
+   ```bash
+   cd backend
    npm run dev
    ```
 
-4. **Open your browser**
+7. **Start the frontend server**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+8. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 🏗️ Architecture
@@ -68,8 +96,23 @@ frontend/
 │   │   ├── PaymentForm.tsx
 │   │   ├── SessionConfirmation.tsx
 │   │   └── ParkingMap.tsx
-│   └── types/              # TypeScript definitions
+│   └── services/           # API service functions
 ├── public/                 # Static assets
+└── package.json
+```
+
+### Backend (Node.js/Express)
+```
+backend/
+├── src/
+│   ├── controllers/        # Request handlers
+│   ├── models/            # Database models
+│   ├── routes/            # API routes
+│   ├── services/          # Business logic
+│   ├── middleware/        # Express middleware
+│   ├── utils/             # Utility functions
+│   └── config/            # Configuration
+├── logs/                  # Application logs
 └── package.json
 ```
 
@@ -80,6 +123,10 @@ frontend/
 - **Framer Motion** - Smooth animations and transitions
 - **Lucide React** - Beautiful, customizable icons
 - **Stripe** - Payment processing (ready for integration)
+- **Node.js/Express** - Backend API server
+- **MongoDB** - Database for data persistence
+- **Socket.IO** - Real-time updates
+- **Winston** - Logging system
 
 ## 📱 User Flow
 
@@ -125,15 +172,27 @@ frontend/
 ```
 ParkSF/
 ├── frontend/              # Next.js frontend application
-├── backend/               # Node.js backend (future)
+├── backend/               # Node.js backend API
 ├── shared/                # Shared types and utilities (future)
 ├── docs/                  # Documentation (future)
 └── README.md
 ```
 
 ### Available Scripts
+
+**Frontend:**
 ```bash
-# Development
+cd frontend
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript check
+```
+
+**Backend:**
+```bash
+cd backend
 npm run dev          # Start development server
 npm run build        # Build for production
 npm run start        # Start production server
@@ -142,7 +201,8 @@ npm run type-check   # Run TypeScript check
 ```
 
 ### Environment Variables
-Create a `.env.local` file in the frontend directory:
+
+**Frontend** - Create a `.env.local` file in the frontend directory:
 ```env
 # Stripe (for production)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
@@ -153,6 +213,33 @@ NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijoi...
 
 # SFMTA API (for real data)
 SFMTA_API_KEY=your_api_key_here
+
+# Backend API URL
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+**Backend** - Create a `.env` file in the backend directory:
+```env
+# Server Configuration
+PORT=3001
+NODE_ENV=development
+
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/parksf
+
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key
+
+# CORS
+CORS_ORIGIN=http://localhost:3000
+
+# Payment Configuration
+PARKSF_FEE=0.05
+SFMTA_FEE=0.37
 ```
 
 ## 🚀 Deployment
